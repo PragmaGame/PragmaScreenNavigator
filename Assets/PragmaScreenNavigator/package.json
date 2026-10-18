@@ -1,0 +1,26 @@
+{
+  "name": "com.pragma.screennavigator",
+  "displayName": "Pragma Screen Navigator",
+  "version": "0.1.0",
+  "unity": "6000.0",
+  "description": "Screen navigation for UI Toolkit. Screens are named by an enum and live in a history stack: the top one is focused, overlays below stay visible with their input blocked, pages hide what they cover. Screen instances are pooled, view models bind through runtime data binding, composite screens are made of elements with their own pooled view models. Open arguments, Back handling and show/hide animations included. No dependency on a DI container or a pool: both plug in through small interfaces.",
+  "keywords": [
+    "ui",
+    "ui-toolkit",
+    "navigation",
+    "screens",
+    "mvvm"
+  ],
+  "author": {
+    "name": "Pragma",
+    "email": "pragmagame@gmail.com",
+    "url": "https://github.com/PragmaGame"
+  },
+  "documentationUrl": "https://github.com/PragmaGame/PragmaScreenNavigator",
+  "changelogUrl": "https://github.com/PragmaGame/PragmaScreenNavigator/blob/master/Assets/PragmaScreenNavigator/CHANGELOG.md",
+  "licensesUrl": "https://github.com/PragmaGame/PragmaScreenNavigator/blob/master/Assets/PragmaScreenNavigator/LICENSE.md",
+  "license": "MIT",
+  "dependencies": {
+    "com.unity.modules.uielements": "1.0.0"
+  }
+}

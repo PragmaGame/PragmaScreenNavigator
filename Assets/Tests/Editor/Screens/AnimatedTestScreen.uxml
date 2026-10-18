@@ -1,0 +1,3 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:tests="Pragma.ScreenNavigator.Tests" editor-extension-mode="True">
+    <tests:AnimatedTestScreen />
+</ui:UXML>

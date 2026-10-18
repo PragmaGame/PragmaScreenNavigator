@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:tests="Pragma.ScreenNavigator.Tests" editor-extension-mode="True">
+    <tests:FirstTestScreen>
+        <tests:CounterElement name="counter" />
+        <ui:VisualElement name="list" />
+    </tests:FirstTestScreen>
+</ui:UXML>

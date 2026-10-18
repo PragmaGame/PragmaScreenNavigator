@@ -1,0 +1,25 @@
+{
+    "name": "Pragma.ScreenNavigator.Tests.Editor",
+    "rootNamespace": "Pragma.ScreenNavigator.Tests",
+    "references": [
+        "Pragma.ScreenNavigator",
+        "Pragma.ScreenNavigator.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
