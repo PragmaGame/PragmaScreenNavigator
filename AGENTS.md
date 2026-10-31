@@ -13,8 +13,9 @@ The package is pre-1.0: backward compatibility is not required yet, prefer clean
 | Path | Assembly | Ships |
 |---|---|---|
 | `Assets/PragmaScreenNavigator/Runtime/Navigation` | `Pragma.ScreenNavigator` | yes — `Navigation<TScreen>`, catalog, modes, host, states |
-| `Assets/PragmaScreenNavigator/Runtime/Views` | `Pragma.ScreenNavigator` | yes — `ScreenView`, `ScreenElement`, input blocking |
+| `Assets/PragmaScreenNavigator/Runtime/Views` | `Pragma.ScreenNavigator` | yes — `ScreenView`, `ScreenElement`, input blocking, what the panel takes from the game's input (`PanelExtensions`) |
 | `Assets/PragmaScreenNavigator/Runtime/ViewModels` | `Pragma.ScreenNavigator` | yes — view models, factories, element view model pool |
+| `Assets/PragmaScreenNavigator/Runtime/Lists` | `Pragma.ScreenNavigator` | yes — `SelectableList` and its view models (`SelectableListViewModel`, `ListRowViewModel`) |
 | `Assets/PragmaScreenNavigator/Runtime/Pooling` | `Pragma.ScreenNavigator` | yes — `IInstancePool<T>`, `IInstancePoolFactory`, the default stack pools |
 | `Assets/PragmaScreenNavigator/Editor` | `Pragma.ScreenNavigator.Editor` | yes — `ScreenNavigatorLinkerProcessor` (generated link.xml) |
 | `Assets/Tests/Editor` | `Pragma.ScreenNavigator.Tests.Editor` | no — EditMode tests and their UXML screens |

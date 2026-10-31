@@ -4,6 +4,18 @@ All notable changes to this package are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `SelectableList`, `SelectableListViewModel`, `ListRowViewModel`: a list of rows with a selection. The screen's view
+  model owns the list view model and fills it with `SetRows(texts, selected)`, the player's pick arrives through
+  `Chosen`; rows are reused, `Rows` notifies a new count and `Selected` a new selection. The element shows buttons
+  (`is-selectable`) or labels, with the `row-class` of the UXML and its `--selected` modifier.
+- `PanelExtensions.IsPointerOverUi(panel, screenPosition)` and `PanelExtensions.IsTyping(panel)`: whether a click
+  belongs to the UI rather than the world under it, and whether the focus is in a text field, so the game's hotkeys stay
+  silent; `VisualElementExtensions.IsTextInput(element)` for one element.
+
 ## [0.1.0]
 
 ### Added

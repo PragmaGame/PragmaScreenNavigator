@@ -20,6 +20,8 @@ through runtime data binding.
 - **Open arguments** — `Push(screen, args)` hands data to the view model before the screen is shown
 - **Back** — `Back()` closes the focused screen unless its view model refuses
 - **Animations** — `AnimateShow` / `AnimateHide` hooks; focus and the return to the pool wait for them
+- **Lists** — `SelectableList`, a list of rows with a selection over its own view model
+- **Input to the game** — whether the pointer is over the UI and whether the player types into a field
 - **DI-agnostic** — view models come from an `IViewModelFactory` you implement over any container
 - **Stripping-safe** — a build step keeps the constructors of your view models under IL2CPP managed code stripping
 
@@ -312,6 +314,60 @@ catches up with it right away (`OnShow`, then `OnFocus`). Element view models co
 
 Elements register only while the screen is in a panel, so add `navigation.Root` to a document before relying on them.
 
+## Lists
+
+A list of rows with a selection — saved games, open lobbies, languages, the players of a lobby — is a
+`SelectableList` element over a `SelectableListViewModel`. The list view model is a part of the screen without a
+lifecycle of its own: the screen's view model owns it and fills it, the screen view binds it.
+
+```csharp
+public class ReplaysViewModel : ScreenViewModel
+{
+    public SelectableListViewModel Replays { get; } = new SelectableListViewModel();
+
+    protected override void OnShow()
+    {
+        Replays.Chosen += OnChosen;                 // the player's choice; -1 for none
+        Replays.SetRows(LoadNames(), selected: 0);  // texts in order and the selected row
+    }
+
+    protected override void OnHide()
+    {
+        Replays.Chosen -= OnChosen;
+    }
+}
+
+[UxmlElement]
+public partial class ReplaysScreen : ScreenView<ReplaysViewModel>
+{
+    private SelectableList _replays;
+
+    protected override void OnBind(ReplaysViewModel viewModel)
+    {
+        _replays = this.Q<SelectableList>("replays");
+        _replays.Bind(viewModel.Replays);
+    }
+
+    protected override void OnUnbind(ReplaysViewModel viewModel)
+    {
+        _replays.Unbind();
+    }
+}
+```
+
+```xml
+<Pragma.ScreenNavigator.SelectableList name="replays" row-class="replay-row" is-selectable="true" />
+```
+
+- Rows are `ListRowViewModel`s (`Text`, `IsSelected`), reused when the list is filled again: a list that refreshes
+  itself does not create view models over and over. `Rows` notifies when their number changes, `Selected` when the
+  selection does; a row notifies its own text and mark.
+- Selectable rows are buttons that select on click and raise `Chosen`; with `is-selectable="false"` they are labels
+  whose mark only shows (the player's own row in a lobby). A selection made by `SetRows` is not reported: the screen
+  made it.
+- The rows get the `row-class` (`selectable-list__row` by default), the selected one also `row-class--selected`; how
+  they look is the screen's style.
+
 ## Pools
 
 The navigation keeps one pool per screen id and one per element view model type. It asks an `IInstancePoolFactory` for
@@ -424,6 +480,25 @@ Screens and the navigation root have `pickingMode = Ignore`: empty space lets th
 navigation events at its root, so a click on a visible screen below a dialog reaches neither its buttons nor the world.
 A modal dialog keeps clicks off everything below with a full-size backdrop element inside the screen: child elements
 catch the pointer by default.
+
+The game asks the panel before it treats a click or a key as its own (`PanelExtensions`, on the `panel` of the
+document's root):
+
+```csharp
+var panel = document.rootVisualElement.panel;
+if (panel.IsPointerOverUi(pointerPosition))   // pixels from the bottom left, as the Input System gives them
+{
+    return;                                   // the click belongs to the UI, not to the units under it
+}
+if (panel.IsTyping())                         // the focus is in a text field: hotkeys stay silent
+{
+    return;
+}
+```
+
+Give the document's root `pickingMode = Ignore` too, or every point of the screen counts as UI. `IsTyping` holds for
+every field the player types into (`TextField`, `IntegerField`...); `element.IsTextInput()` asks the same of one
+element. Both answer false for a panel that is not there yet.
 
 ## Code stripping
 
