@@ -628,7 +628,7 @@ namespace Pragma.ScreenNavigator.Tests
             Assert.IsNotNull(_navigation.Root.panel, "the navigation root is in a panel");
         }
 
-        private static TestScreens CreateCatalog()
+        internal static TestScreens CreateCatalog()
         {
             var catalog = ScriptableObject.CreateInstance<TestScreens>();
             var serialized = new SerializedObject(catalog);

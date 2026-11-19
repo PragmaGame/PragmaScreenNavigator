@@ -5,7 +5,10 @@ using UnityEngine.UIElements;
 
 namespace Pragma.ScreenNavigator.Tests
 {
-    /// <summary><see cref="SelectableListViewModel"/> and the <see cref="SelectableList"/> element that shows it.</summary>
+    /// <summary>
+    /// <see cref="SelectableListViewModel"/>, the <see cref="SelectableList"/> element that shows it and the items behind its
+    /// rows (<see cref="SelectableItems{TItem}"/>).
+    /// </summary>
     public class SelectableListTests
     {
         [Test]
@@ -79,6 +82,43 @@ namespace Pragma.ScreenNavigator.Tests
             element.Unbind();
             list.SetRows(new[] { "y" }, 0);
             Assert.AreEqual("x", rows[0].text, "an unbound element keeps what it showed");
+        }
+
+        [Test]
+        public void Items_SelectionFollowsTheItemsKey_ThroughARefill()
+        {
+            var items = new SelectableItems<(string id, string name)>(item => item.name, item => item.id);
+            items.SetItems(new[] { ("a", "Alpha"), ("b", "Beta") }, false);
+            Assert.IsFalse(items.HasSelection, "nothing selected unless asked");
+            CollectionAssert.AreEqual(new[] { "Alpha", "Beta" }, items.List.Rows.Select(row => row.Text));
+
+            items.List.Select(1);
+            Assert.AreEqual(("b", "Beta"), items.SelectedItem, "the player's choice is the selected item");
+
+            items.SetItems(new[] { ("c", "Gamma"), ("b", "Beta renamed"), ("a", "Alpha") }, false);
+            Assert.AreEqual(1, items.Selected, "the selection moved with its item");
+            Assert.AreEqual("Beta renamed", items.SelectedItem.name);
+
+            items.SetItems(new[] { ("c", "Gamma") }, false);
+            Assert.IsFalse(items.HasSelection, "the selected item is gone");
+            Assert.AreEqual(default((string, string)), items.SelectedItem);
+
+            items.SetItems(new[] { ("c", "Gamma"), ("d", "Delta") }, true);
+            Assert.AreEqual(0, items.Selected, "nothing to follow: the first item when asked");
+        }
+
+        [Test]
+        public void Items_Select_IsTheScreensOwnChoice_NotReported()
+        {
+            var items = new SelectableItems<string>(item => item, item => item);
+            var chosen = new List<int>();
+            items.List.Chosen += chosen.Add;
+            items.SetItems(new[] { "a", "b" }, true);
+
+            items.Select(1);
+
+            Assert.AreEqual("b", items.SelectedItem);
+            CollectionAssert.IsEmpty(chosen);
         }
 
         [Test]

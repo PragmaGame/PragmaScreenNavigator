@@ -20,7 +20,12 @@ through runtime data binding.
 - **Open arguments** — `Push(screen, args)` hands data to the view model before the screen is shown
 - **Back** — `Back()` closes the focused screen unless its view model refuses
 - **Animations** — `AnimateShow` / `AnimateHide` hooks; focus and the return to the pool wait for them
-- **Lists** — `SelectableList`, a list of rows with a selection over its own view model
+- **Lists** — `SelectableList`, a list of rows with a selection over its own view model; `SelectableItems<TItem>` keeps
+  the selection on its item when the list is refilled
+- **Screen paths** — `ScreenPath<TScreen>`, screens with their arguments to open later in order, so Back walks back
+- **Safe area** — the screens stay clear of a camera cutout and the system bars, the world under them does not
+- **Hosted in a scene or from code** — `NavigationHost` on a scene object, `DocumentNavigation` over a document made at
+  run time
 - **Input to the game** — whether the pointer is over the UI and whether the player types into a field
 - **DI-agnostic** — view models come from an `IViewModelFactory` you implement over any container
 - **Stripping-safe** — a build step keeps the constructors of your view models under IL2CPP managed code stripping
@@ -199,9 +204,31 @@ protected override void Update()
 }
 ```
 
-`Navigation<TScreen>` works without the host as well: create it, add `navigation.Root` to a document, call
-`navigation.Update()` every frame and `Dispose()` at the end. Both take an optional `IInstancePoolFactory` after the
-view model factory (see [Pools](#pools)).
+The host keeps the screens inside the screen's safe area (see [Safe area](#safe-area)); untick *Is Safe Area Inset*
+for a navigation that must cover the whole screen.
+
+A document created from code — a loading window over every scene, a layer that outlives scenes — has no host
+component: `DocumentNavigation<TScreen>` does the host's part for it. It creates the navigation and owns it, puts its
+root into the document whenever the document has a root without it (a document builds a new root each time it is
+enabled), keeps the safe area and passes the frame:
+
+```csharp
+var document = gameObject.AddComponent<UIDocument>();
+document.panelSettings = panelSettings;
+
+_screens = new DocumentNavigation<LoadingScreen>(document, loadingScreens, new ActivatorViewModelFactory());
+_screens.Navigation.Push(LoadingScreen.Progress);
+
+// every frame
+_screens.Update();
+
+// when the screens go
+_screens.Dispose();
+```
+
+`Navigation<TScreen>` itself needs no document either: create it, add `navigation.Root` wherever it belongs, call
+`navigation.Update()` every frame and `Dispose()` at the end. All of them take an optional `IInstancePoolFactory` after
+the view model factory (see [Pools](#pools)).
 
 ## Lifecycle
 
@@ -269,6 +296,19 @@ gets `OnDestroy` — and the original exception comes out.
 
 A view model closes its own screen with `Close()` — the top one like `Pop`, one in the middle of the history without
 touching the screens above it.
+
+### Screen paths
+
+A way back into the menu — after a match, a scene change, a reload — is a `ScreenPath<TScreen>`: screens with their
+arguments, opened later in order over what is open, so Back walks the way the player came. A path is immutable: `Then`
+returns a new one a step longer, so it can be kept and handed around.
+
+```csharp
+var path = ScreenPath<ScreenType>.To(ScreenType.Campaign).Then(ScreenType.Level, new LevelArgs(levelKey));
+
+// later, once the menu's navigation is there
+path.Open(navigation);
+```
 
 ## Animations
 
@@ -367,6 +407,21 @@ public partial class ReplaysScreen : ScreenView<ReplaysViewModel>
   made it.
 - The rows get the `row-class` (`selectable-list__row` by default), the selected one also `row-class--selected`; how
   they look is the screen's style.
+
+When the rows stand for items — saves, lobbies, profiles — `SelectableItems<TItem>` keeps them together: it fills its
+`List` with the items' texts and keeps the selection on an item by its key when the list is refilled with new data, as
+long as that item is still there.
+
+```csharp
+public SelectableItems<SaveInfo> Saves { get; } = new SelectableItems<SaveInfo>(save => save.Title, save => save.FileName);
+
+Saves.SetItems(LoadSaves(), isFirstSelected: true);   // after a refill the same save stays selected
+var save = Saves.SelectedItem;                         // the default value when none is
+
+_saves.Bind(viewModel.Saves.List);                     // the screen binds its list view model
+```
+
+`Select(index)` is the screen's own choice and is not reported by `Chosen`.
 
 ## Pools
 
@@ -472,6 +527,20 @@ public sealed class PragmaPoolFactory : IInstancePoolFactory
 
 Then pass it next to the view model factory: `CreateNavigation(new ActivatorViewModelFactory(), new PragmaPoolFactory())`
 in a host, or `new Navigation<ScreenType>(catalog, viewModelFactory, new PragmaPoolFactory())`.
+
+## Safe area
+
+A phone's camera cutout, rounded corners and system bars take part of the screen. The hosts (`NavigationHost`,
+`DocumentNavigation`) keep the navigation root inside `Screen.safeArea`: the root's offsets are the margins of the safe
+area in the units of the panel, updated when the orientation or the resolution changes, so every screen with its
+buttons stays clear of the cutout while the game world under the document still fills the whole screen (keep the
+player's *Render outside safe area* on). A screen that must cover the whole screen — a loading curtain, a fade — needs a
+navigation of its own without the inset. `SafeAreaInset` does the same for any absolutely positioned element:
+
+```csharp
+var inset = new SafeAreaInset(hud);
+inset.Update();   // every frame: cheap while nothing changes
+```
 
 ## Input
 

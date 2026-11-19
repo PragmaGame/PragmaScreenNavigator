@@ -7,7 +7,8 @@ namespace Pragma.ScreenNavigator
     /// <summary>
     /// The navigation of a scene on a UI Toolkit document: creates the navigation with the view model factory it is given
     /// (<see cref="CreateNavigation"/>), adds its root to the document and opens the start screen on Start, passes it the
-    /// frame every Update and disposes it in OnDestroy.
+    /// frame every Update and disposes it in OnDestroy. The document part — the root in the document, the safe area, the
+    /// frame — is <see cref="DocumentNavigation{TScreen}"/>, which a document created from code uses without a host.
     ///
     /// The host knows no DI container. A concrete host is a subclass with its own screen enum and catalog, and it calls
     /// <see cref="CreateNavigation"/> before Start: from the registration in its container, with a factory over that
@@ -28,9 +29,12 @@ namespace Pragma.ScreenNavigator
         [SerializeField, Tooltip("The screen opened when the scene starts.")]
         private TScreen _startScreen;
 
-        private Navigation<TScreen> _navigation;
+        [SerializeField, Tooltip("Keep the screens inside the screen's safe area (a camera cutout, rounded corners); the world under the document stays on the whole screen.")]
+        private bool _isSafeAreaInset = true;
 
-        protected INavigation<TScreen> Navigation => _navigation;
+        private DocumentNavigation<TScreen> _host;
+
+        protected INavigation<TScreen> Navigation => _host?.Navigation;
 
         protected UIDocument Document => _document;
 
@@ -54,43 +58,37 @@ namespace Pragma.ScreenNavigator
                 throw new InvalidOperationException($"{GetType().Name}: the document or the screen catalog is not assigned.");
             }
 
-            if (_navigation != null)
+            if (_host != null)
             {
                 throw new InvalidOperationException($"{GetType().Name}: the navigation is already created.");
             }
 
-            _navigation = new Navigation<TScreen>(_screens, factory, pools);
+            _host = new DocumentNavigation<TScreen>(_document, _screens, factory, pools, _isSafeAreaInset);
 
-            return _navigation;
+            return _host.Navigation;
         }
 
-        /// <summary>
-        /// The document creates its root in OnEnable, so it exists by Start. Empty space of the document lets the pointer
-        /// through, as do the navigation root and the screens: only panels and buttons catch it.
-        /// </summary>
+        /// <summary>The document creates its root in OnEnable, so it exists by Start.</summary>
         protected virtual void Start()
         {
-            if (_navigation == null)
+            if (_host == null)
             {
                 throw new InvalidOperationException($"{GetType().Name}: the navigation is not created, call {nameof(CreateNavigation)} before Start.");
             }
 
-            var root = _document.rootVisualElement;
-            root.pickingMode = PickingMode.Ignore;
-            root.Add(_navigation.Root);
-
-            _navigation.Push(StartScreen);
+            _host.Attach();
+            _host.Navigation.Push(StartScreen);
         }
 
         protected virtual void Update()
         {
-            _navigation?.Update();
+            _host?.Update();
         }
 
         /// <summary>Dispose is idempotent, so a container that disposes the navigation as well does no harm.</summary>
         protected virtual void OnDestroy()
         {
-            _navigation?.Dispose();
+            _host?.Dispose();
         }
     }
 }
