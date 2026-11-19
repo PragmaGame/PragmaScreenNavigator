@@ -4,74 +4,88 @@ using UnityEngine.UIElements;
 namespace Pragma.ScreenNavigator
 {
     /// <summary>
-    /// Keeps an absolutely positioned element inside the screen's safe area (<see cref="Screen.safeArea"/>: a camera
-    /// cutout, rounded corners, the system bars): its left, top, right and bottom offsets are the margins of the safe area,
-    /// in the units of its panel. What lies under the element's parent outside the safe area — the game world under a
-    /// cutout — stays on the whole screen; only the element and its children move in. <see cref="Update"/> is cheap while
-    /// nothing changes, so call it every frame: the safe area changes with the orientation and the resolution.
+    /// Keeps the content of every child of a container inside the screen's safe area (<see cref="Screen.safeArea"/>: a
+    /// camera cutout, rounded corners, the system bars), while the child itself stays on the whole container: its
+    /// background — a dimming, a curtain — and its pointer catching cover the cutout too, so nothing behind a modal screen
+    /// takes a touch there. The margins of the safe area, in the units of the panel, are a transparent border of each child:
+    /// the layout keeps both the child's flow children and its absolutely positioned ones inside the border, which padding
+    /// would not do for the absolute ones, and the background is drawn under it. The hosts use it with the navigation root
+    /// as the container, so every screen gets it; the border of a screen's root is theirs, frame a screen on an inner
+    /// element. <see cref="Update"/> is cheap while nothing changes, so call it every frame: the safe area changes with the
+    /// orientation and the resolution.
     /// </summary>
     public sealed class SafeAreaInset
     {
-        private readonly VisualElement _element;
+        private readonly VisualElement _container;
 
-        private Rect _safeArea;
-        private Vector2 _screenSize;
-        private Vector2 _panelSize;
-
-        /// <param name="element">An element with <see cref="Position.Absolute"/>: its offsets are what this class sets.</param>
-        public SafeAreaInset(VisualElement element)
+        /// <param name="container">The container whose children get the inset: the navigation root, for its screens.</param>
+        public SafeAreaInset(VisualElement container)
         {
-            _element = element;
+            _container = container;
         }
 
-        /// <summary>Applies the safe area of the screen, when it, the screen or the panel size changed since the last call.</summary>
+        /// <summary>Applies the safe area of the screen to every child whose border does not match it yet.</summary>
         public void Update()
         {
             Apply(Screen.safeArea, new Vector2(Screen.width, Screen.height));
         }
 
         /// <summary>
-        /// Applies <paramref name="safeArea"/> of a screen of <paramref name="screenSize"/> pixels, when one of them or the size
-        /// of the element's panel changed since the last call. Nothing happens while the element is not in a laid out panel.
+        /// Applies <paramref name="safeArea"/> of a screen of <paramref name="screenSize"/> pixels, in the units of the
+        /// container's panel, to every child whose border does not match it yet. Nothing happens while the container is not in
+        /// a laid out panel.
         /// </summary>
         /// <param name="safeArea">Pixels from the bottom left of the screen, as <see cref="Screen.safeArea"/>.</param>
         public void Apply(Rect safeArea, Vector2 screenSize)
         {
-            var root = _element.panel?.visualTree;
+            var root = _container.panel?.visualTree;
 
             if (root == null)
             {
                 return;
             }
 
-            var panelSize = root.layout.size;
-
-            if (safeArea == _safeArea && screenSize == _screenSize && panelSize == _panelSize)
-            {
-                return;
-            }
-
-            _safeArea = safeArea;
-            _screenSize = screenSize;
-            _panelSize = panelSize;
-
-            var (left, top, right, bottom) = GetInsets(safeArea, screenSize, panelSize);
-            _element.style.left = left;
-            _element.style.top = top;
-            _element.style.right = right;
-            _element.style.bottom = bottom;
+            SetInsets(GetInsets(safeArea, screenSize, root.layout.size));
         }
 
-        /// <summary>Puts the element back on the whole panel, and the next <see cref="Apply"/> sets the offsets anew.</summary>
+        /// <summary>
+        /// Gives every child of the container a transparent border of <paramref name="insets"/>, in panel units. Each child is
+        /// checked on every call and written only when its border differs: a screen that came in since (a replaced tab, one
+        /// back from its pool after the screen turned) gets the current inset whatever the number of children.
+        /// </summary>
+        public void SetInsets((float left, float top, float right, float bottom) insets)
+        {
+            for (var i = 0; i < _container.childCount; i++)
+            {
+                var child = _container[i];
+
+                if (Matches(child.style.borderLeftWidth, insets.left) && Matches(child.style.borderTopWidth, insets.top)
+                    && Matches(child.style.borderRightWidth, insets.right) && Matches(child.style.borderBottomWidth, insets.bottom))
+                {
+                    continue;
+                }
+
+                child.style.borderLeftWidth = insets.left;
+                child.style.borderTopWidth = insets.top;
+                child.style.borderRightWidth = insets.right;
+                child.style.borderBottomWidth = insets.bottom;
+                child.style.borderLeftColor = Color.clear;
+                child.style.borderTopColor = Color.clear;
+                child.style.borderRightColor = Color.clear;
+                child.style.borderBottomColor = Color.clear;
+            }
+        }
+
+        /// <summary>Puts the content of the children back on their whole area.</summary>
         public void Reset()
         {
-            _safeArea = default;
-            _screenSize = default;
-            _panelSize = default;
-            _element.style.left = 0;
-            _element.style.top = 0;
-            _element.style.right = 0;
-            _element.style.bottom = 0;
+            SetInsets((0f, 0f, 0f, 0f));
+        }
+
+        /// <summary>The border width set on the child is <paramref name="inset"/>; one never set is no border.</summary>
+        private static bool Matches(StyleFloat width, float inset)
+        {
+            return width.keyword == StyleKeyword.Undefined ? Mathf.Approximately(width.value, inset) : inset == 0f;
         }
 
         /// <summary>

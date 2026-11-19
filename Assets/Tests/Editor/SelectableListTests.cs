@@ -108,6 +108,24 @@ namespace Pragma.ScreenNavigator.Tests
         }
 
         [Test]
+        public void Items_TheCallersListChangedBeforeTheRefill_KeepsTheSelectionOnItsItem()
+        {
+            var items = new SelectableItems<string>(item => item, item => item);
+            var forts = new List<string> { "a", "b", "c" };
+            items.SetItems(forts, true);
+            items.List.Select(2);
+
+            forts.RemoveAt(0);
+            Assert.AreEqual("c", items.SelectedItem, "the rows stand for what they were filled with");
+            items.SetItems(forts, true);
+            Assert.AreEqual(1, items.Selected, "the selection followed its item, not its old index");
+
+            forts.RemoveAt(1);
+            Assert.DoesNotThrow(() => items.SetItems(forts, true), "the selected item, the last one, was deleted from the caller's list");
+            Assert.AreEqual("b", items.SelectedItem, "it is gone: the first item");
+        }
+
+        [Test]
         public void Items_Select_IsTheScreensOwnChoice_NotReported()
         {
             var items = new SelectableItems<string>(item => item, item => item);

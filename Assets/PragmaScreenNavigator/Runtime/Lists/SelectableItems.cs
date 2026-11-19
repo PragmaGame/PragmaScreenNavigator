@@ -6,7 +6,8 @@ namespace Pragma.ScreenNavigator
     /// <summary>
     /// The items of a <see cref="SelectableList"/>: what each row stands for, its text and the selected item. The selection
     /// follows an item by its key, so it survives a refill of the list with new data (from disk or a service) while that
-    /// item is still there. An item the player must not pick (not ready, locked) has its row disabled. The rows and the
+    /// item is still there. The items are copied: a list the caller changes afterwards (a fort deleted from it) does not
+    /// change what the rows stand for until the next <see cref="SetItems"/>. An item the player must not pick (not ready, locked) has its row disabled. The rows and the
     /// player's choice are the <see cref="List"/> view model the screen binds; the screen's view model owns this object and
     /// reads the selected item here.
     /// </summary>
@@ -16,8 +17,7 @@ namespace Pragma.ScreenNavigator
         private readonly Func<TItem, object> _key;
         private readonly Func<TItem, bool> _isEnabled;
         private readonly List<string> _texts = new List<string>();
-
-        private IReadOnlyList<TItem> _items = Array.Empty<TItem>();
+        private readonly List<TItem> _items = new List<TItem>();
 
         /// <param name="text">The text of an item's row.</param>
         /// <param name="key">What identifies an item between refills (an id, a file name); compared with <see cref="object.Equals(object, object)"/>.</param>
@@ -53,14 +53,16 @@ namespace Pragma.ScreenNavigator
                 throw new ArgumentNullException(nameof(items));
             }
 
+            // The key of the selected item from the copy: the caller may have changed its list since the last call.
             var selectedKey = HasSelection ? _key(_items[List.Selected]) : null;
             var selected = -1;
 
-            _items = items;
+            _items.Clear();
             _texts.Clear();
 
             for (var i = 0; i < items.Count; i++)
             {
+                _items.Add(items[i]);
                 _texts.Add(_text(items[i]));
 
                 if (selected < 0 && selectedKey != null && Equals(_key(items[i]), selectedKey))

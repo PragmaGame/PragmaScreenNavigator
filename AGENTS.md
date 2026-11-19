@@ -58,6 +58,10 @@ One namespace, `Pragma.ScreenNavigator`, for every folder. The package depends o
   (UI Builder, tests without a `UIDocument`) has elements without view models — that is intended.
 - **Input blocking is event based** (`ScreenInputBlocker`): trickle-down callbacks on the screen root stop pointer,
   keyboard and navigation events; `SetEnabled(false)` is not used because it restyles the screen.
+- **The safe area is a transparent border of the screen roots** (`SafeAreaInset` on the navigation root's children), not
+  offsets of the navigation root and not padding: the screens and their backgrounds must cover the whole screen, so a
+  modal screen catches a touch at the cutout too, and the layout ignores padding for absolutely positioned children
+  while it keeps them inside a border. The border of a screen's root belongs to the hosts.
 
 ## Code conventions
 

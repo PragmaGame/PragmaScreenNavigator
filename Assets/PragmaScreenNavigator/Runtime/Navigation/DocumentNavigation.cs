@@ -7,8 +7,9 @@ namespace Pragma.ScreenNavigator
     /// The navigation of screens shown in a UI Toolkit document, hosted from code: what <see cref="NavigationHost{TScreen,TCatalog}"/>
     /// does in a scene, for a document created at run time — a loading window, a console, a screen layer that outlives
     /// scenes. It creates the navigation and owns it, puts its root into the document whenever the document has a root
-    /// without it (a document builds its root in OnEnable and builds a new one after it is enabled again), keeps the root
-    /// inside the screen's safe area (<see cref="SafeAreaInset"/>, when asked) and passes the navigation the frame. The
+    /// without it (a document builds its root in OnEnable and builds a new one after it is enabled again), keeps the content
+    /// of its screens inside the screen's safe area while the screens themselves cover the whole document
+    /// (<see cref="SafeAreaInset"/>, when asked) and passes the navigation the frame. The
     /// owner calls <see cref="Update"/> every frame and <see cref="Dispose"/> when the screens go; which screens to open is
     /// up to it.
     /// </summary>
@@ -24,8 +25,8 @@ namespace Pragma.ScreenNavigator
         /// <param name="viewModels">Where the view models of the screens come from.</param>
         /// <param name="pools">The pools of screen instances and element view models; <see cref="StackInstancePoolFactory"/> when null.</param>
         /// <param name="isSafeAreaInset">
-        /// Keep the screens inside the screen's safe area. Off for screens that must cover the whole screen, a cutout too, and
-        /// keep their content away from its edges themselves.
+        /// Keep the content of the screens inside the screen's safe area; their backgrounds and pointer catching cover the
+        /// whole screen either way. Off for screens that keep their content away from a cutout themselves.
         /// </param>
         public DocumentNavigation(UIDocument document, ScreenCatalog<TScreen> screens, IViewModelFactory viewModels, IInstancePoolFactory pools = null,
                                   bool isSafeAreaInset = true)

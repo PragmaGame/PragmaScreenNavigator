@@ -29,7 +29,7 @@ namespace Pragma.ScreenNavigator
         [SerializeField, Tooltip("The screen opened when the scene starts.")]
         private TScreen _startScreen;
 
-        [SerializeField, Tooltip("Keep the screens inside the screen's safe area (a camera cutout, rounded corners); the world under the document stays on the whole screen.")]
+        [SerializeField, Tooltip("Keep the content of the screens inside the screen's safe area (a camera cutout, rounded corners); their backgrounds and touches cover the whole screen.")]
         private bool _isSafeAreaInset = true;
 
         private DocumentNavigation<TScreen> _host;

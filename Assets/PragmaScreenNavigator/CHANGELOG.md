@@ -19,18 +19,20 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   isEnabled)` — greyed out, the player's click does nothing; `SetSelected(index)` for the screen's own selection.
 - `SelectableItems<TItem>`: the items behind the rows of a `SelectableList`, with their texts and the selection kept on
   an item by its key when the list is refilled; `SelectedItem`, `SetItems(items, isFirstSelected)`, `Select(index)`; the
-  items the player cannot pick (an optional `isEnabled`) have disabled rows.
+  items the player cannot pick (an optional `isEnabled`) have disabled rows. The items are copied: the caller's list
+  may change before the next refill.
 - `ScreenPath<TScreen>`: an immutable path of screens with their open arguments (`To`, `Then`), opened later in order
   over what is open (`Open(navigation)`), so Back walks the way the player came.
 - `DocumentNavigation<TScreen>`: the navigation of a `UIDocument` created from code — owns the navigation, puts its root
   into the document whenever the document builds a new one, keeps the safe area and passes the frame.
-- `SafeAreaInset`: keeps an absolutely positioned element inside `Screen.safeArea` (a camera cutout, rounded corners,
-  the system bars) in the units of its panel; `GetInsets` for the margins alone.
+- `SafeAreaInset`: keeps the content of the children of a container inside `Screen.safeArea` (a camera cutout, rounded
+  corners, the system bars) with a transparent border of the margins in panel units — flow and absolutely positioned
+  children move in, the background and pointer catching stay on the whole child; `GetInsets` for the margins alone.
 
 ### Changed
 
-- `NavigationHost` keeps the screens inside the screen's safe area (*Is Safe Area Inset*, on by default) and does its
-  document part through `DocumentNavigation`.
+- `NavigationHost` keeps the content of the screens inside the screen's safe area (*Is Safe Area Inset*, on by
+  default) while the screens cover the whole screen, and does its document part through `DocumentNavigation`.
 
 ## [0.1.0]
 

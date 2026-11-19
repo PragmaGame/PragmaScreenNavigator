@@ -204,8 +204,8 @@ protected override void Update()
 }
 ```
 
-The host keeps the screens inside the screen's safe area (see [Safe area](#safe-area)); untick *Is Safe Area Inset*
-for a navigation that must cover the whole screen.
+The host keeps the content of the screens inside the screen's safe area (see [Safe area](#safe-area)); untick *Is Safe
+Area Inset* for screens that keep their content away from a cutout themselves.
 
 A document created from code — a loading window over every scene, a layer that outlives scenes — has no host
 component: `DocumentNavigation<TScreen>` does the host's part for it. It creates the navigation and owns it, puts its
@@ -413,7 +413,8 @@ public partial class ReplaysScreen : ScreenView<ReplaysViewModel>
 
 When the rows stand for items — saves, lobbies, profiles — `SelectableItems<TItem>` keeps them together: it fills its
 `List` with the items' texts and keeps the selection on an item by its key when the list is refilled with new data, as
-long as that item is still there.
+long as that item is still there. It copies the items, so a list the caller changes afterwards — an item deleted from
+it before the refill — does not change what the rows stand for until the next `SetItems`.
 
 ```csharp
 public SelectableItems<SaveInfo> Saves { get; } = new SelectableItems<SaveInfo>(save => save.Title, save => save.FileName);
@@ -535,15 +536,24 @@ in a host, or `new Navigation<ScreenType>(catalog, viewModelFactory, new PragmaP
 ## Safe area
 
 A phone's camera cutout, rounded corners and system bars take part of the screen. The hosts (`NavigationHost`,
-`DocumentNavigation`) keep the navigation root inside `Screen.safeArea`: the root's offsets are the margins of the safe
-area in the units of the panel, updated when the orientation or the resolution changes, so every screen with its
-buttons stays clear of the cutout while the game world under the document still fills the whole screen (keep the
-player's *Render outside safe area* on). A screen that must cover the whole screen — a loading curtain, a fade — needs a
-navigation of its own without the inset. `SafeAreaInset` does the same for any absolutely positioned element:
+`DocumentNavigation`) keep the content of every screen inside `Screen.safeArea`, while the screens themselves and the
+navigation root still cover the whole screen:
+
+- a screen's root gets a transparent border of the margins of the safe area, in the units of the panel, updated when
+  the orientation or the resolution changes; every screen is checked each frame, so one created or back from its pool
+  since — whatever the number of screens — gets the current inset too;
+- the layout keeps both the screen's flow children and its absolutely positioned ones (a HUD bar at `top: 10px`) inside
+  the border — padding would not move the absolute ones;
+- the screen's background — a dimming, a curtain — is drawn under the border, and its root catches the pointer there:
+  a modal screen keeps a touch at the cutout off the world below it;
+- the game world under the document fills the whole screen (keep the player's *Render outside safe area* on).
+
+The border of a screen's root belongs to the host: draw a frame on an inner element. `SafeAreaInset` does the same for
+the children of any container:
 
 ```csharp
-var inset = new SafeAreaInset(hud);
-inset.Update();   // every frame: cheap while nothing changes
+var inset = new SafeAreaInset(layer);   // layer's children get the inset
+inset.Update();                         // every frame: cheap while nothing changes
 ```
 
 ## Input

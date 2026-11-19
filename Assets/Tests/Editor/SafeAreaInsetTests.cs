@@ -4,7 +4,10 @@ using UnityEngine.UIElements;
 
 namespace Pragma.ScreenNavigator.Tests
 {
-    /// <summary><see cref="SafeAreaInset"/>: the margins of the safe area in panel units and what it does to an element.</summary>
+    /// <summary>
+    /// <see cref="SafeAreaInset"/>: the margins of the safe area in panel units, and the transparent border of the children
+    /// that keeps their content inside it while they stay on the whole container.
+    /// </summary>
     public class SafeAreaInsetTests
     {
         private static readonly Vector2 SCREEN = new Vector2(2400f, 1080f);
@@ -45,20 +48,88 @@ namespace Pragma.ScreenNavigator.Tests
         }
 
         [Test]
-        public void Apply_OutsideAPanel_LeavesTheElement_AndResetPutsItOnTheWholePanel()
+        public void Apply_OutsideAPanel_LeavesTheChildren()
         {
-            var element = new VisualElement();
-            element.style.left = 7f;
-            var inset = new SafeAreaInset(element);
+            var container = new VisualElement();
+            var child = new VisualElement();
+            container.Add(child);
+            var inset = new SafeAreaInset(container);
 
             inset.Apply(new Rect(120f, 0f, SCREEN.x - 120f, SCREEN.y), SCREEN);
-            Assert.AreEqual(7f, element.style.left.value.value, "no panel, no size to inset by");
+
+            Assert.AreEqual(StyleKeyword.Null, child.style.borderLeftWidth.keyword, "no panel, no size to inset by");
+        }
+
+        [Test]
+        public void SetInsets_IsATransparentBorderOfEveryChild_AndOfAChildAddedSince()
+        {
+            var container = new VisualElement();
+            var first = new VisualElement();
+            container.Add(first);
+            container.Add(new VisualElement());
+            var inset = new SafeAreaInset(container);
+            var insets = (10f, 20f, 30f, 40f);
+
+            inset.SetInsets(insets);
+
+            foreach (var child in container.Children())
+            {
+                Assert.AreEqual(insets, (child.style.borderLeftWidth.value, child.style.borderTopWidth.value, child.style.borderRightWidth.value,
+                                         child.style.borderBottomWidth.value), "the content moves in by the margins");
+                Assert.AreEqual(Color.clear, child.style.borderLeftColor.value, "the border shows the background, not a frame");
+            }
+
+            Assert.AreEqual(StyleKeyword.Null, first.style.left.keyword, "the child itself stays where its own style puts it");
+
+            var added = new VisualElement();
+            container.Add(added);
+            inset.SetInsets(insets);
+            Assert.AreEqual(30f, added.style.borderRightWidth.value, "a screen created since gets the same inset");
 
             inset.Reset();
-            Assert.AreEqual(0f, element.style.left.value.value);
-            Assert.AreEqual(0f, element.style.top.value.value);
-            Assert.AreEqual(0f, element.style.right.value.value);
-            Assert.AreEqual(0f, element.style.bottom.value.value);
+            Assert.AreEqual(0f, first.style.borderLeftWidth.value);
+            Assert.AreEqual(0f, added.style.borderBottomWidth.value);
+        }
+
+        [Test]
+        public void SetInsets_AChildReplacedBetweenCalls_GetsTheBorder()
+        {
+            var container = new VisualElement();
+            var leaving = new VisualElement();
+            container.Add(leaving);
+            container.Add(new VisualElement());
+            var inset = new SafeAreaInset(container);
+            var insets = (10f, 20f, 30f, 40f);
+            inset.SetInsets(insets);
+
+            // A tab replaced by another: the same number of children, a new one among them.
+            leaving.RemoveFromHierarchy();
+            var coming = new VisualElement();
+            container.Add(coming);
+            inset.SetInsets(insets);
+
+            Assert.AreEqual(10f, coming.style.borderLeftWidth.value);
+            Assert.AreEqual(40f, coming.style.borderBottomWidth.value);
+        }
+
+        [Test]
+        public void SetInsets_AChildBackAfterTheInsetsChanged_GetsTheNewOnes()
+        {
+            var container = new VisualElement();
+            var pooled = new VisualElement();
+            container.Add(pooled);
+            container.Add(new VisualElement());
+            var inset = new SafeAreaInset(container);
+            inset.SetInsets((10f, 0f, 0f, 0f));
+
+            // A screen asleep in its pool outside the root while the phone turns, then back.
+            pooled.RemoveFromHierarchy();
+            inset.SetInsets((0f, 0f, 10f, 0f));
+            container.Add(pooled);
+            inset.SetInsets((0f, 0f, 10f, 0f));
+
+            Assert.AreEqual(0f, pooled.style.borderLeftWidth.value, "the old inset is gone");
+            Assert.AreEqual(10f, pooled.style.borderRightWidth.value, "the new one is there");
         }
     }
 }
