@@ -3,7 +3,8 @@ using Unity.Properties;
 namespace Pragma.ScreenNavigator
 {
     /// <summary>
-    /// A row of a <see cref="SelectableList"/>: its text and whether it is selected. A part of a screen with data of its own
+    /// A row of a <see cref="SelectableList"/>: its text, whether it is selected and whether the player can select it. A part
+    /// of a screen with data of its own
     /// but no lifecycle, so a <see cref="ViewModel"/> directly: the list view model (<see cref="SelectableListViewModel"/>)
     /// owns it, and the row element makes it its dataSource.
     /// </summary>
@@ -12,6 +13,7 @@ namespace Pragma.ScreenNavigator
     {
         private string _text = string.Empty;
         private bool _isSelected;
+        private bool _isEnabled = true;
 
         [CreateProperty]
         public string Text
@@ -26,6 +28,14 @@ namespace Pragma.ScreenNavigator
         {
             get => _isSelected;
             internal set => SetProperty(ref _isSelected, value);
+        }
+
+        /// <summary>The player can select the row; a disabled one is shown greyed out and ignores clicks.</summary>
+        [CreateProperty]
+        public bool IsEnabled
+        {
+            get => _isEnabled;
+            internal set => SetProperty(ref _isEnabled, value);
         }
     }
 }

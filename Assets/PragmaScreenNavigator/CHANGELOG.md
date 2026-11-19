@@ -15,8 +15,11 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PanelExtensions.IsPointerOverUi(panel, screenPosition)` and `PanelExtensions.IsTyping(panel)`: whether a click
   belongs to the UI rather than the world under it, and whether the focus is in a text field, so the game's hotkeys stay
   silent; `VisualElementExtensions.IsTextInput(element)` for one element.
+- A disabled row of a `SelectableList`: `ListRowViewModel.IsEnabled`, `SelectableListViewModel.SetEnabled(index,
+  isEnabled)` — greyed out, the player's click does nothing; `SetSelected(index)` for the screen's own selection.
 - `SelectableItems<TItem>`: the items behind the rows of a `SelectableList`, with their texts and the selection kept on
-  an item by its key when the list is refilled; `SelectedItem`, `SetItems(items, isFirstSelected)`, `Select(index)`.
+  an item by its key when the list is refilled; `SelectedItem`, `SetItems(items, isFirstSelected)`, `Select(index)`; the
+  items the player cannot pick (an optional `isEnabled`) have disabled rows.
 - `ScreenPath<TScreen>`: an immutable path of screens with their open arguments (`To`, `Then`), opened later in order
   over what is open (`Open(navigation)`), so Back walks the way the player came.
 - `DocumentNavigation<TScreen>`: the navigation of a `UIDocument` created from code — owns the navigation, puts its root

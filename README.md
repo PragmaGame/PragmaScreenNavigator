@@ -399,9 +399,12 @@ public partial class ReplaysScreen : ScreenView<ReplaysViewModel>
 <Pragma.ScreenNavigator.SelectableList name="replays" row-class="replay-row" is-selectable="true" />
 ```
 
-- Rows are `ListRowViewModel`s (`Text`, `IsSelected`), reused when the list is filled again: a list that refreshes
-  itself does not create view models over and over. `Rows` notifies when their number changes, `Selected` when the
-  selection does; a row notifies its own text and mark.
+- Rows are `ListRowViewModel`s (`Text`, `IsSelected`, `IsEnabled`), reused when the list is filled again: a list that
+  refreshes itself does not create view models over and over. `Rows` notifies when their number changes, `Selected` when
+  the selection does; a row notifies its own text, mark and state.
+- A row the player must not pick — a save of another version, a fort that is not ready — stays in the list greyed out:
+  `SetEnabled(index, false)`; the player's click on it does nothing. `SetRows` enables every row again, and the screen's
+  own selection (`SetSelected`) is not limited.
 - Selectable rows are buttons that select on click and raise `Chosen`; with `is-selectable="false"` they are labels
   whose mark only shows (the player's own row in a lobby). A selection made by `SetRows` is not reported: the screen
   made it.
@@ -421,7 +424,8 @@ var save = Saves.SelectedItem;                         // the default value when
 _saves.Bind(viewModel.Saves.List);                     // the screen binds its list view model
 ```
 
-`Select(index)` is the screen's own choice and is not reported by `Chosen`.
+`Select(index)` is the screen's own choice and is not reported by `Chosen`. An optional third argument says which items
+the player can pick; the rows of the others are disabled, and the first selection skips them.
 
 ## Pools
 

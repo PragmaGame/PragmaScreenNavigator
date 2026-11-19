@@ -5,7 +5,8 @@ namespace Pragma.ScreenNavigator
 {
     /// <summary>
     /// A list of rows with a selection, an element of a screen over a <see cref="SelectableListViewModel"/>: one row per
-    /// <see cref="ListRowViewModel"/>, the selected one with the <c>--selected</c> modifier of the row class. The UXML sets the
+    /// <see cref="ListRowViewModel"/>, the selected one with the <c>--selected</c> modifier of the row class, a disabled one
+    /// greyed out (<see cref="VisualElement.SetEnabled"/>). The UXML sets the
     /// row class (<see cref="RowClass"/>: how rows look is the screen's style) and whether rows can be selected
     /// (<see cref="IsSelectable"/>: rows are buttons that select on click; otherwise labels whose mark only shows). The data is
     /// the list view model the screen's view model owns; the screen view binds it in OnBind (<see cref="Bind"/>) and
@@ -121,6 +122,7 @@ namespace Pragma.ScreenNavigator
 
             _rows[index].text = row.Text;
             _rows[index].EnableInClassList(RowClass + SELECTED_USS_MODIFIER, row.IsSelected);
+            _rows[index].SetEnabled(row.IsEnabled);
         }
 
         private void UnbindRows()

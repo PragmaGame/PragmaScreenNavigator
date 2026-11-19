@@ -122,6 +122,47 @@ namespace Pragma.ScreenNavigator.Tests
         }
 
         [Test]
+        public void DisabledRow_IsGreyed_AndThePlayerCannotChooseIt()
+        {
+            var list = new SelectableListViewModel();
+            var chosen = new List<int>();
+            list.Chosen += chosen.Add;
+            list.SetRows(new[] { "a", "b" }, 0);
+            list.SetEnabled(1, false);
+            var element = new SelectableList();
+            element.Bind(list);
+            var rows = element.Children().OfType<Button>().ToArray();
+
+            Assert.IsFalse(rows[1].enabledSelf, "the row is greyed out");
+            list.Select(1);
+            Assert.AreEqual(0, list.Selected, "a disabled row cannot be chosen");
+            CollectionAssert.IsEmpty(chosen, "nothing to report");
+
+            list.SetSelected(1);
+            Assert.AreEqual(1, list.Selected, "the screen may select it itself");
+            CollectionAssert.IsEmpty(chosen);
+
+            list.SetRows(new[] { "c", "d" }, -1);
+            Assert.IsTrue(list.Rows[1].IsEnabled, "new rows are enabled again");
+            Assert.IsTrue(rows[1].enabledSelf);
+        }
+
+        [Test]
+        public void Items_DisabledItems_AreSkippedForTheFirstSelection()
+        {
+            var items = new SelectableItems<(string id, bool isReady)>(item => item.id, item => item.id, item => item.isReady);
+
+            items.SetItems(new[] { ("a", false), ("b", true) }, true);
+
+            Assert.AreEqual(1, items.Selected, "the first item the player can pick");
+            Assert.IsFalse(items.List.Rows[0].IsEnabled);
+            Assert.IsTrue(items.List.Rows[1].IsEnabled);
+
+            items.List.Select(0);
+            Assert.AreEqual(1, items.Selected, "the player cannot pick the disabled one");
+        }
+
+        [Test]
         public void Element_NotSelectable_ShowsLabels()
         {
             var list = new SelectableListViewModel();

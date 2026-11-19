@@ -9,8 +9,9 @@ namespace Pragma.ScreenNavigator
     /// (<see cref="ListRowViewModel"/>), the selected one and the player's choice. The view model of the screen owns it (a
     /// list is a part of a screen without a lifecycle of its own) and fills it with <see cref="SetRows"/>; the screen learns
     /// what the player picked from <see cref="Chosen"/>. The notifications are separate: <see cref="Rows"/> means the number of
-    /// rows changed, <see cref="Selected"/> the selection; a row notifies its own text and mark. Rows are reused, so a list
-    /// that refreshes itself does not create view models over and over.
+    /// rows changed, <see cref="Selected"/> the selection; a row notifies its own text, mark and whether it is enabled. Rows
+    /// are reused, so a list that refreshes itself does not create view models over and over. A row the player must not pick
+    /// (an item that is not ready) is disabled with <see cref="SetEnabled"/>: it stays in the list, greyed out.
     /// </summary>
     [GeneratePropertyBag]
     public class SelectableListViewModel : ViewModel
@@ -32,7 +33,7 @@ namespace Pragma.ScreenNavigator
 
         public int Count => _rows.Count;
 
-        /// <summary>Replaces the rows: their texts in order and the selected one (-1 for none).</summary>
+        /// <summary>Replaces the rows: their texts in order and the selected one (-1 for none). Every row is enabled again.</summary>
         public void SetRows(IReadOnlyList<string> texts, int selected)
         {
             var isCountChanged = texts.Count != _rows.Count;
@@ -53,6 +54,7 @@ namespace Pragma.ScreenNavigator
             for (var i = 0; i < texts.Count; i++)
             {
                 _rows[i].Text = texts[i];
+                _rows[i].IsEnabled = true;
             }
 
             if (isCountChanged)
@@ -63,11 +65,31 @@ namespace Pragma.ScreenNavigator
             ApplySelection(selected);
         }
 
-        /// <summary>The player's choice: the row at <paramref name="index"/>, or none for an index outside the list.</summary>
+        /// <summary>
+        /// The player's choice: the row at <paramref name="index"/>, or none for an index outside the list. A disabled row
+        /// cannot be chosen: nothing changes and nothing is reported.
+        /// </summary>
         public void Select(int index)
         {
+            if (index >= 0 && index < _rows.Count && !_rows[index].IsEnabled)
+            {
+                return;
+            }
+
             ApplySelection(index);
             Chosen?.Invoke(_selected);
+        }
+
+        /// <summary>The screen's own selection: the row at <paramref name="index"/>, or none for an index outside the list; not reported.</summary>
+        public void SetSelected(int index)
+        {
+            ApplySelection(index);
+        }
+
+        /// <summary>Whether the player can select the row at <paramref name="index"/>; the screen's own selection is not limited by it.</summary>
+        public void SetEnabled(int index, bool isEnabled)
+        {
+            _rows[index].IsEnabled = isEnabled;
         }
 
         private void ApplySelection(int index)
